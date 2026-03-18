@@ -1,0 +1,46 @@
+{
+  "config": {
+    "step": {
+      "oauth2_authorize": {
+        "description": "Cliquez sur 'Confirmer' pour autoriser Home Assistant à accéder à votre compte Navimow.\n\nVous serez redirigé vers la page de connexion Navimow pour terminer l'authentification."
+      },
+      "user": {
+        "title": "Configuration de l'intégration Navimow",
+        "description": "Configurer l'intégration de la tondeuse Navimow"
+      },
+      "reauth_confirm": {
+        "title": "Nouvelle authentification requise",
+        "description": "Votre authentification Navimow a expiré. Veuillez vous ré-authentifier pour continuer à utiliser l'intégration."
+      }
+    },
+    "error": {
+      "authorization_failed": "L'autorisation a échoué. Veuillez réessayer.",
+      "token_exchange_failed": "Échec de l'échange du code d'autorisation contre un jeton.",
+      "callback_failed": "Échec du traitement du rappel OAuth2.",
+      "cannot_connect": "Impossible de se connecter au service Navimow.",
+      "invalid_auth": "L'authentification a échoué. Veuillez vérifier votre configuration.",
+      "unknown": "Une erreur inconnue s'est produite.",
+      "missing_config": "Configuration manquante. Veuillez configurer CLIENT_ID et CLIENT_SECRET dans const.py."
+    },
+    "abort": {
+      "single_instance_allowed": "Une seule instance de Navimow est autorisée.",
+      "already_configured": "L'instance Navimow est déjà configurée.",
+      "reauth_successful": "Nouvelle authentification réussie."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Options Navimow",
+        "description": "Configurer les options de l'intégration Navimow"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery": {
+        "name": "Batterie"
+      }
+    }
+  }
+}

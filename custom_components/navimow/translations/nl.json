@@ -1,0 +1,46 @@
+{
+  "config": {
+    "step": {
+      "oauth2_authorize": {
+        "description": "Klik op 'Bevestigen' om Home Assistant toegang te geven tot uw Navimow-account.\n\nU wordt doorgestuurd naar de Navimow-inlogpagina om de authenticatie te voltooien."
+      },
+      "user": {
+        "title": "Navimow-integratieconfiguratie",
+        "description": "Configureer de Navimow-grasmaaierintegratie"
+      },
+      "reauth_confirm": {
+        "title": "Her-authenticatie Vereist",
+        "description": "Uw Navimow-authenticatie is verlopen. Voer opnieuw authenticatie uit om de integratie te blijven gebruiken."
+      }
+    },
+    "error": {
+      "authorization_failed": "Autorisatie mislukt. Probeer het opnieuw.",
+      "token_exchange_failed": "Het uitwisselen van de autorisatiecode voor een token is mislukt.",
+      "callback_failed": "Het verwerken van de OAuth2-callback is mislukt.",
+      "cannot_connect": "Kan geen verbinding maken met de Navimow-service.",
+      "invalid_auth": "Authenticatie mislukt. Controleer uw configuratie.",
+      "unknown": "Er is een onbekende fout opgetreden.",
+      "missing_config": "Ontbrekende configuratie. Configureer CLIENT_ID en CLIENT_SECRET in const.py."
+    },
+    "abort": {
+      "single_instance_allowed": "Er is slechts één Navimow-instantie toegestaan.",
+      "already_configured": "Navimow is al geconfigureerd.",
+      "reauth_successful": "Her-authenticatie succesvol."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Navimow-opties",
+        "description": "Configureer de opties voor de Navimow-integratie"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery": {
+        "name": "Accu"
+      }
+    }
+  }
+}

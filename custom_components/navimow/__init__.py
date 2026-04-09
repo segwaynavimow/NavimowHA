@@ -193,7 +193,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 )
 
             async def _on_disconnected() -> None:
-                _LOGGER.warning(
+                _LOGGER.debug(
                     "MQTT disconnected callback: broker=%s port=%s ws_path=%s tls=%s client_id=%s",
                     mqtt.broker,
                     mqtt.port,

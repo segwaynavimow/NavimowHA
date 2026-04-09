@@ -123,9 +123,14 @@ class NavimowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             raise ConfigEntryAuthFailed("No access token after refresh")
         access_token = token["access_token"]
         self.api.set_token(access_token)
-        # 同步更新 MQTT WebSocket 认证头，避免 token 过期后重连失败（CODE_OAUTH_INFO_ILLEGAL）
-        self.sdk.update_mqtt_credentials(
-            auth_headers={"Authorization": f"Bearer {access_token}"}
+        # update_mqtt_credentials 在 MQTT 断开时会重建 client 并调用 tls_set()，
+        # 触发 load_default_certs 等 SSL 阻塞操作，必须在 executor 中执行。
+        _auth_headers = {"Authorization": f"Bearer {access_token}"}
+        await self.hass.async_add_executor_job(
+            self.sdk.update_mqtt_credentials,
+            None,  # username
+            None,  # password
+            _auth_headers,
         )
         return access_token
 

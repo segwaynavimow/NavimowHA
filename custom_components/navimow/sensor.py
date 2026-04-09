@@ -91,6 +91,12 @@ class NavimowSensor(CoordinatorEntity[NavimowCoordinator], SensorEntity):
         )
 
     @property
+    def available(self) -> bool:
+        if self.coordinator.get_device_state() is not None:
+            return True
+        return super().available
+
+    @property
     def native_value(self) -> Any:
         """Return sensor value from coordinator."""
         return self.entity_description.value_fn(self.coordinator)

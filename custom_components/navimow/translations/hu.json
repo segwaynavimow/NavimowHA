@@ -1,0 +1,46 @@
+{
+  "config": {
+    "step": {
+      "oauth2_authorize": {
+        "description": "Kattints a „Megerősítés” gombra, hogy engedélyezd a Home Assistant számára a Navimow-fiókhoz való hozzáférést.\n\nA hitelesítés befejezéséhez átirányítunk a Navimow bejelentkezési oldalára."
+      },
+      "user": {
+        "title": "Navimow integráció beállítása",
+        "description": "Konfiguráld a Navimow fűnyíró integrációját"
+      },
+      "reauth_confirm": {
+        "title": "Újrahitelesítés szükséges",
+        "description": "A Navimow-hitelesítésed lejárt. Kérjük, hitelesítsd magad újra az integráció használatának folytatásához."
+      }
+    },
+    "error": {
+      "authorization_failed": "Sikertelen engedélyezés. Próbáld újra.",
+      "token_exchange_failed": "Nem sikerült az engedélyezési kódot tokenre cserélni.",
+      "callback_failed": "Nem sikerült feldolgozni az OAuth2 visszahívást.",
+      "cannot_connect": "Nem sikerült csatlakozni a Navimow szolgáltatáshoz.",
+      "invalid_auth": "A hitelesítés sikertelen. Kérjük, ellenőrizd a beállítást.",
+      "unknown": "Ismeretlen hiba történt.",
+      "missing_config": "Hiányzó beállítás. Kérjük, konfiguráld a CLIENT_ID és a CLIENT_SECRET értékeket a következőben: const.py."
+    },
+    "abort": {
+      "single_instance_allowed": "Csak egy Navimow beállítása engedélyezett.",
+      "already_configured": "A Navimow már konfigurálva van.",
+      "reauth_successful": "Az újrahitelesítés sikeres."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Navimow opciók",
+        "description": "Navimow integrációs beállítások konfigurálása"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery": {
+        "name": "Akkumulátor"
+      }
+    }
+  }
+}

@@ -152,12 +152,22 @@ class NavimowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self._last_http_fetch is None
             or now - self._last_http_fetch > HTTP_FALLBACK_MIN_INTERVAL
         )
+        if is_mqtt_stale and not self.sdk.is_connected:
+            _LOGGER.warning(
+                "MQTT appears disconnected for device %s; relying on HTTP fallback",
+                self.device.id,
+            )
         if is_mqtt_stale and can_http_fetch:
             try:
                 status = await self.api.async_get_device_status(self.device.id)
                 self._last_state = self._device_status_to_state(status)
                 self._last_http_fetch = now
                 self._last_data_source = "http_fallback"
+                _LOGGER.info(
+                    "HTTP fallback succeeded for device %s (MQTT stale)",
+                    self.device.id,
+                )
+                self.async_set_updated_data(self._build_data())
             except ConfigEntryAuthFailed:
                 raise
             except Exception as err:

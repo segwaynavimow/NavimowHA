@@ -34,11 +34,16 @@ MQTT_PASSWORD: Final | None = None
 # 更新间隔（秒）
 UPDATE_INTERVAL: Final = 30
 
-# MQTT 超时时间（秒），超过该时间未收到消息则走 HTTP 兜底
-MQTT_STALE_SECONDS: Final = 300
+# MQTT 超时时间（秒），超过该时间未收到状态消息则走 HTTP 兜底。
+# Reduced to detect silent MQTT outages (no state pushes from server) sooner.
+MQTT_STALE_SECONDS: Final = 90
 
-# HTTP 兜底最小拉取间隔（秒），避免频繁请求
-HTTP_FALLBACK_MIN_INTERVAL: Final = 3600
+# MQTT Keepalive (seconds). PINGREQ interval for faster half-open TCP detection.
+MQTT_KEEPALIVE_SECONDS: Final = 120
+
+# HTTP 兜底最小拉取间隔（秒）。
+# 当 MQTT 实时状态缺失时，按分钟级回退到 HTTP，避免状态长时间卡住。
+HTTP_FALLBACK_MIN_INTERVAL: Final = 60
 
 # MowerStatus 到 LawnMowerActivity 的映射
 MOWER_STATUS_TO_ACTIVITY = {

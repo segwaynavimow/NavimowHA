@@ -21,6 +21,7 @@ from .const import (
     MQTT_PORT,
     MQTT_USERNAME,
     MQTT_PASSWORD,
+    MQTT_KEEPALIVE_SECONDS,
 )
 from .services import async_setup_services
 
@@ -322,8 +323,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 auth_headers=auth_headers,
                 loop=hass.loop,
                 records=devices,
-                # broker 每小时断连时，优先用 MQTT 协议层 keepalive（PINGREQ/PINGRESP）保活。
-                keepalive_seconds=2400,  # 40 分钟
+                keepalive_seconds=MQTT_KEEPALIVE_SECONDS,
                 reconnect_min_delay=1,
                 reconnect_max_delay=60,
             )

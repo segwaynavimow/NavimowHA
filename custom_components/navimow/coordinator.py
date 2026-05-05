@@ -53,6 +53,7 @@ class NavimowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._last_state: DeviceStateMessage | None = None
         self._last_attributes: DeviceAttributesMessage | None = None
         self._last_mqtt_update: float | None = None
+        self._last_mqtt_state_update: float | None = None
         self._last_http_fetch: float | None = None
         self._last_data_source: str | None = None
 
@@ -69,6 +70,7 @@ class NavimowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "meta": {
                 "last_data_source": self._last_data_source,
                 "last_mqtt_update_monotonic": self._last_mqtt_update,
+                "last_mqtt_state_update_monotonic": self._last_mqtt_state_update,
                 "last_http_fetch_monotonic": self._last_http_fetch,
             },
         }
@@ -144,20 +146,33 @@ class NavimowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self._last_attributes = cached_attrs
 
         now = time.monotonic()
-        is_mqtt_stale = (
-            self._last_mqtt_update is None
-            or now - self._last_mqtt_update > MQTT_STALE_SECONDS
+        # Use state-specific freshness here. Attributes packets can still arrive
+        # while mower activity/state is stale, which would otherwise suppress
+        # the HTTP fallback and leave Home Assistant showing old status.
+        is_state_stale = (
+            self._last_mqtt_state_update is None
+            or now - self._last_mqtt_state_update > MQTT_STALE_SECONDS
         )
         can_http_fetch = (
             self._last_http_fetch is None
             or now - self._last_http_fetch > HTTP_FALLBACK_MIN_INTERVAL
         )
-        if is_mqtt_stale and can_http_fetch:
+        if is_state_stale and can_http_fetch:
             try:
                 status = await self.api.async_get_device_status(self.device.id)
+                _LOGGER.debug(
+                    "HTTP fallback success: device=%s battery=%s status=%s",
+                    self.device.id,
+                    status.battery,
+                    status.status.value if status.status else "unknown",
+                )
                 self._last_state = self._device_status_to_state(status)
                 self._last_http_fetch = now
                 self._last_data_source = "http_fallback"
+                # Push immediately so entities update without waiting for the
+                # next coordinator tick.
+                self.data = self._build_data()
+                self.async_set_updated_data(self.data)
             except ConfigEntryAuthFailed:
                 raise
             except Exception as err:
@@ -166,10 +181,11 @@ class NavimowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 )
 
         _LOGGER.debug(
-            "Coordinator update: device=%s source=%s mqtt_ts=%s http_ts=%s",
+            "Coordinator update: device=%s source=%s mqtt_ts=%s mqtt_state_ts=%s http_ts=%s",
             self.device.id,
             self._last_data_source,
             self._last_mqtt_update,
+            self._last_mqtt_state_update,
             self._last_http_fetch,
         )
         self.data = self._build_data()
@@ -184,7 +200,9 @@ class NavimowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             state.state,
             state.battery,
         )
-        self._last_mqtt_update = time.monotonic()
+        now = time.monotonic()
+        self._last_mqtt_update = now
+        self._last_mqtt_state_update = now
         self._last_data_source = "mqtt_push"
         self.hass.loop.call_soon_threadsafe(self._update_from_state, state)
 
@@ -192,9 +210,8 @@ class NavimowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if attrs.device_id != self.device.id:
             return
         _LOGGER.debug(
-            "MQTT attributes received: device=%s keys=%d",
+            "MQTT attributes received: device=%s",
             attrs.device_id,
-            len(getattr(attrs, "__dict__", {}) or {}),
         )
         self._last_mqtt_update = time.monotonic()
         self.hass.loop.call_soon_threadsafe(self._update_from_attributes, attrs)

@@ -36,6 +36,10 @@ MQTT_PASSWORD: Final | None = None
 # 更新间隔（秒）
 UPDATE_INTERVAL: Final = 30
 
+# Als zowel MQTT als de HTTP-fallback dit lang stil zijn gebleven, markeert de
+# coordinator de entiteit als unavailable in plaats van verouderde data te tonen.
+DATA_UNAVAILABLE_SECONDS: Final = 600
+
 # MQTT 超时时间（秒），超过该时间未收到状态消息则走 HTTP 兜底。
 # Reduced to detect silent MQTT outages and missing state pushes sooner.
 MQTT_STALE_SECONDS: Final = 90

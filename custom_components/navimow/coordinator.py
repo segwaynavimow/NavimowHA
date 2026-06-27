@@ -9,7 +9,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers import config_entry_oauth2_flow
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from mower_sdk.api import MowerAPI
 from mower_sdk.models import (
@@ -24,6 +24,7 @@ from mower_sdk.sdk import NavimowSDK
 from .const import (
     CONF_ZONE_NAMES,
     DEFAULT_ZONE_NAMES,
+    DATA_UNAVAILABLE_SECONDS,
     DOMAIN,
     HTTP_FALLBACK_MIN_INTERVAL,
     MQTT_STALE_SECONDS,
@@ -221,6 +222,17 @@ class NavimowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self._last_mqtt_state_update,
             self._last_http_fetch,
         )
+
+        last_success = max(
+            (ts for ts in (self._last_mqtt_update, self._last_http_fetch) if ts is not None),
+            default=None,
+        )
+        if last_success is None or now - last_success > DATA_UNAVAILABLE_SECONDS:
+            raise UpdateFailed(
+                f"No data received for device {self.device.id} via MQTT or HTTP "
+                f"in over {DATA_UNAVAILABLE_SECONDS} seconds"
+            )
+
         self.data = self._build_data()
         return self.data
 

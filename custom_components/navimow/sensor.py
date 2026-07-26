@@ -17,6 +17,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from mower_sdk.models import DeviceStateMessage, MowerStatus
 
 from .const import DOMAIN
 from .coordinator import NavimowCoordinator
@@ -36,10 +37,27 @@ def state_battery(coordinator: NavimowCoordinator) -> int | None:
     return state.battery if state else None
 
 
+def docked_status(state: DeviceStateMessage) -> str:
+    """Split docked into charging/idle using battery level.
+
+    The cloud only ever reports isDocked at the base; battery level is the
+    best available proxy for "still charging" vs "program finished, idling".
+    """
+    if state.battery is None:
+        return MowerStatus.DOCKED.value
+    if state.battery < 100:
+        return MowerStatus.CHARGING.value
+    return MowerStatus.IDLE.value
+
+
 def state_status(coordinator: NavimowCoordinator) -> str | None:
-    """Return the canonical mower status string."""
+    """Return the mower status, with docked refined into charging or idle."""
     state = coordinator.get_device_state()
-    return state.state if state else None
+    if not state:
+        return None
+    if state.state == MowerStatus.DOCKED.value:
+        return docked_status(state)
+    return state.state
 
 
 def state_status_attributes(coordinator: NavimowCoordinator) -> dict[str, Any] | None:

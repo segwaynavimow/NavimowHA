@@ -59,6 +59,18 @@ def test_values_are_none_without_state() -> None:
     assert sensor.http_mowing_time(coordinator) is None
 
 
+def test_status_docked_splits_into_charging_and_idle() -> None:
+    charging = make_state(state="isDocked", battery=93)
+    assert sensor.state_status(make_coordinator(state=charging)) == "charging"
+    full = make_state(state="isDocked", battery=100)
+    assert sensor.state_status(make_coordinator(state=full)) == "idle"
+
+
+def test_status_cloud_idle_passes_through() -> None:
+    idle = make_state(state="isIdle", battery=93)
+    assert sensor.state_status(make_coordinator(state=idle)) == "idle"
+
+
 def test_error_reports_none_when_mower_is_healthy() -> None:
     coordinator = make_coordinator(state=make_state())
     assert sensor.state_error(coordinator) == "none"

@@ -66,9 +66,11 @@ def test_status_docked_splits_into_charging_and_idle() -> None:
     assert sensor.state_status(make_coordinator(state=full)) == "idle"
 
 
-def test_status_cloud_idle_passes_through() -> None:
-    idle = make_state(state="isIdle", battery=93)
-    assert sensor.state_status(make_coordinator(state=idle)) == "idle"
+def test_status_cloud_idle_flicker_is_folded_into_derivation() -> None:
+    flicker = make_state(state="isIdle", battery=93)
+    assert sensor.state_status(make_coordinator(state=flicker)) == "charging"
+    full = make_state(state="isIdle", battery=100)
+    assert sensor.state_status(make_coordinator(state=full)) == "idle"
 
 
 def test_error_reports_none_when_mower_is_healthy() -> None:

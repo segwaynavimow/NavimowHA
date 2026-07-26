@@ -37,11 +37,16 @@ def state_battery(coordinator: NavimowCoordinator) -> int | None:
     return state.battery if state else None
 
 
-def docked_status(state: DeviceStateMessage) -> str:
-    """Split docked into charging/idle using battery level.
+AT_BASE_STATES = (MowerStatus.DOCKED.value, MowerStatus.IDLE.value)
 
-    The cloud only ever reports isDocked at the base; battery level is the
-    best available proxy for "still charging" vs "program finished, idling".
+
+def docked_status(state: DeviceStateMessage) -> str:
+    """Split at-base states into charging/idle using battery level.
+
+    While parked, H230 firmware flaps between isDocked and isIdle every few
+    ticks, so the cloud state cannot distinguish "still charging" from
+    "program finished". Battery level can: below 100% the mower is charging,
+    at 100% with nothing left to resume it idles.
     """
     if state.battery is None:
         return MowerStatus.DOCKED.value
@@ -51,11 +56,11 @@ def docked_status(state: DeviceStateMessage) -> str:
 
 
 def state_status(coordinator: NavimowCoordinator) -> str | None:
-    """Return the mower status, with docked refined into charging or idle."""
+    """Return the mower status, with at-base states refined into charging or idle."""
     state = coordinator.get_device_state()
     if not state:
         return None
-    if state.state == MowerStatus.DOCKED.value:
+    if state.state in AT_BASE_STATES:
         return docked_status(state)
     return state.state
 

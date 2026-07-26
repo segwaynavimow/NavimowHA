@@ -23,6 +23,7 @@ from .const import (
     MQTT_PASSWORD,
     MQTT_KEEPALIVE_SECONDS,
 )
+from .raw_capture import attach_raw_capture
 from .services import async_setup_services
 
 _LOGGER = logging.getLogger(__name__)
@@ -361,6 +362,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             return sdk
 
         sdk = await hass.async_add_executor_job(_create_sdk, api)
+        raw_capture = attach_raw_capture(sdk)
         _attach_mqtt_debug_hooks(sdk, api)
         async_setup_services(hass, api)
         hass.async_create_task(_probe_mqtt_status(sdk))
@@ -386,6 +388,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             "coordinators": coordinators,
             "oauth_session": oauth_session,
             "unload_flag": _unload_flag,
+            "raw_capture": raw_capture,
         }
 
         # 转发到平台

@@ -134,11 +134,24 @@ def _coordinator_block(coordinator: Any, now: float) -> dict[str, Any]:
         "sdk_connected": getattr(sdk, "is_connected", None),
         "last_state": _to_serializable(data.get("state")),
         "last_attributes": _to_serializable(data.get("attributes")),
+        "last_event": _to_serializable(data.get("event")),
+        "last_http_status": _to_serializable(data.get("http_status")),
     }
 
 
 def _entry_data(hass: HomeAssistant, entry: ConfigEntry) -> dict[str, Any]:
     return hass.data.get(DOMAIN, {}).get(entry.entry_id, {}) or {}
+
+
+def _raw_capture_block(hass: HomeAssistant, entry: ConfigEntry) -> list[dict[str, Any]]:
+    """Return the captured raw MQTT payloads, if the capture hook is active."""
+    capture = _entry_data(hass, entry).get("raw_capture")
+    if capture is None:
+        return []
+    try:
+        return capture.snapshot()
+    except Exception:  # noqa: BLE001 - diagnostics must never raise
+        return []
 
 
 async def async_get_config_entry_diagnostics(
@@ -153,6 +166,7 @@ async def async_get_config_entry_diagnostics(
             _coordinator_block(coordinator, now)
             for coordinator in coordinators.values()
         ],
+        "raw_mqtt_payloads": _raw_capture_block(hass, entry),
     }
     return async_redact_data(diagnostics, TO_REDACT)
 

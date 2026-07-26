@@ -40,6 +40,24 @@
     "sensor": {
       "battery": {
         "name": "Battery"
+      },
+      "status": {
+        "name": "Status"
+      },
+      "signal_strength": {
+        "name": "Signal strength"
+      },
+      "error": {
+        "name": "Error"
+      },
+      "last_event": {
+        "name": "Last event"
+      },
+      "mowing_time": {
+        "name": "Mowing time"
+      },
+      "total_mowing_time": {
+        "name": "Total mowing time"
       }
     }
   }

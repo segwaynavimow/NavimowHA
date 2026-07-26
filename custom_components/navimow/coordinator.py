@@ -13,6 +13,7 @@ from mower_sdk.api import MowerAPI
 from mower_sdk.models import (
     Device,
     DeviceAttributesMessage,
+    DeviceEventMessage,
     DeviceStateMessage,
     DeviceStatus,
 )
@@ -20,6 +21,8 @@ from mower_sdk.sdk import NavimowSDK
 
 from .const import (
     DOMAIN,
+    EVENT_NAVIMOW_EVENT,
+    HTTP_ENRICHMENT_INTERVAL,
     HTTP_FALLBACK_MIN_INTERVAL,
     MQTT_STALE_SECONDS,
     UPDATE_INTERVAL,
@@ -52,6 +55,8 @@ class NavimowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.data: dict[str, Any] = {}
         self._last_state: DeviceStateMessage | None = None
         self._last_attributes: DeviceAttributesMessage | None = None
+        self._last_event: DeviceEventMessage | None = None
+        self._last_http_status: DeviceStatus | None = None
         self._last_mqtt_update: float | None = None
         self._last_mqtt_state_update: float | None = None
         self._last_http_fetch: float | None = None
@@ -61,12 +66,15 @@ class NavimowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         """Register callbacks from SDK."""
         self.sdk.on_state(self._handle_state)
         self.sdk.on_attributes(self._handle_attributes)
+        self.sdk.on_event(self._handle_event)
 
     def _build_data(self) -> dict[str, Any]:
         return {
             "device": self.device,
             "state": self._last_state,
             "attributes": self._last_attributes,
+            "event": self._last_event,
+            "http_status": self._last_http_status,
             "meta": {
                 "last_data_source": self._last_data_source,
                 "last_mqtt_update_monotonic": self._last_mqtt_update,
@@ -157,27 +165,38 @@ class NavimowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self._last_http_fetch is None
             or now - self._last_http_fetch > HTTP_FALLBACK_MIN_INTERVAL
         )
-        if is_state_stale and can_http_fetch:
+        # Even with healthy MQTT, poll HTTP occasionally: mowing_time and other
+        # fields exist only in the HTTP response and never arrive via MQTT.
+        needs_http_enrichment = (
+            self._last_http_fetch is None
+            or now - self._last_http_fetch > HTTP_ENRICHMENT_INTERVAL
+        )
+        if (is_state_stale and can_http_fetch) or needs_http_enrichment:
             try:
                 status = await self.api.async_get_device_status(self.device.id)
                 _LOGGER.debug(
-                    "HTTP fallback success: device=%s battery=%s status=%s",
+                    "HTTP fetch success: device=%s battery=%s status=%s stale=%s",
                     self.device.id,
                     status.battery,
                     status.status.value if status.status else "unknown",
+                    is_state_stale,
                 )
-                self._last_state = self._device_status_to_state(status)
+                self._last_http_status = status
                 self._last_http_fetch = now
-                self._last_data_source = "http_fallback"
-                # Push immediately so entities update without waiting for the
-                # next coordinator tick.
-                self.data = self._build_data()
-                self.async_set_updated_data(self.data)
+                if is_state_stale:
+                    # Only let HTTP data replace the entity state when MQTT is
+                    # silent; a fresh MQTT push always wins over a poll.
+                    self._last_state = self._device_status_to_state(status)
+                    self._last_data_source = "http_fallback"
+                    # Push immediately so entities update without waiting for
+                    # the next coordinator tick.
+                    self.data = self._build_data()
+                    self.async_set_updated_data(self.data)
             except ConfigEntryAuthFailed:
                 raise
             except Exception as err:
                 _LOGGER.warning(
-                    "HTTP fallback failed for device %s: %s", self.device.id, err
+                    "HTTP fetch failed for device %s: %s", self.device.id, err
                 )
 
         _LOGGER.debug(
@@ -225,11 +244,38 @@ class NavimowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._last_attributes = attrs
         self.async_set_updated_data(self._build_data())
 
+    def _handle_event(self, event: DeviceEventMessage) -> None:
+        if event.device_id != self.device.id:
+            return
+        _LOGGER.debug(
+            "MQTT event received: device=%s type=%s event=%s level=%s",
+            event.device_id,
+            event.type,
+            event.event,
+            event.level,
+        )
+        self._last_mqtt_update = time.monotonic()
+        self.hass.loop.call_soon_threadsafe(self._update_from_event, event)
+
+    def _update_from_event(self, event: DeviceEventMessage) -> None:
+        self._last_event = event
+        self.hass.bus.async_fire(
+            EVENT_NAVIMOW_EVENT,
+            {"device_name": self.device.name, **event.to_dict()},
+        )
+        self.async_set_updated_data(self._build_data())
+
     def get_device_state(self) -> DeviceStateMessage | None:
         return self.data.get("state")
 
     def get_device_attributes(self) -> DeviceAttributesMessage | None:
         return self.data.get("attributes")
+
+    def get_last_event(self) -> DeviceEventMessage | None:
+        return self.data.get("event")
+
+    def get_http_status(self) -> DeviceStatus | None:
+        return self.data.get("http_status")
 
     def get_device_info(self) -> Any | None:
         return self.data.get("device")

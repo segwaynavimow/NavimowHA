@@ -101,7 +101,7 @@ def _make_hass(coordinator):
 def test_config_entry_diagnostics_freshness_and_redaction():
     now = time.monotonic()
     coordinator = _FakeCoordinator(
-        last_mqtt=now - 600,  # stale (> MQTT_STALE_SECONDS=300)
+        last_mqtt=now - 600,  # stale (> MQTT_STALE_SECONDS)
         last_http=now - 30,  # fresh
         source="http_fallback",
     )
@@ -131,8 +131,8 @@ def test_config_entry_diagnostics_freshness_and_redaction():
 
     # Static config echoed for context.
     cfg = result["integration"]["config"]
-    assert cfg["mqtt_stale_seconds"] == 300
-    assert cfg["http_fallback_min_interval"] == 3600
+    assert cfg["mqtt_stale_seconds"] == diagnostics.MQTT_STALE_SECONDS
+    assert cfg["http_fallback_min_interval"] == diagnostics.HTTP_FALLBACK_MIN_INTERVAL
 
 
 def test_fresh_mqtt_is_not_stale():

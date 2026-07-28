@@ -37,6 +37,8 @@ class NavimowEventEntity(CoordinatorEntity[NavimowCoordinator], EventEntity):
     _attr_has_entity_name = True
     _attr_translation_key = "mower_event"
     _attr_event_types = KNOWN_EVENT_TYPES
+    # H-series never publishes to the event topic; models that do can enable it.
+    _attr_entity_registry_enabled_default = False
 
     def __init__(self, coordinator: NavimowCoordinator) -> None:
         super().__init__(coordinator)

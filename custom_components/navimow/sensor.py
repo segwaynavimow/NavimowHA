@@ -141,6 +141,7 @@ SENSOR_DESCRIPTIONS: tuple[NavimowSensorEntityDescription, ...] = (
         translation_key="signal_strength",
         entity_category=EntityCategory.DIAGNOSTIC,
         state_class=SensorStateClass.MEASUREMENT,
+        entity_registry_enabled_default=False,
         value_fn=state_signal_strength,
     ),
     NavimowSensorEntityDescription(
@@ -152,6 +153,7 @@ SENSOR_DESCRIPTIONS: tuple[NavimowSensorEntityDescription, ...] = (
     NavimowSensorEntityDescription(
         key="last_event",
         translation_key="last_event",
+        entity_registry_enabled_default=False,
         value_fn=last_event,
         attributes_fn=last_event_attributes,
     ),
@@ -161,6 +163,7 @@ SENSOR_DESCRIPTIONS: tuple[NavimowSensorEntityDescription, ...] = (
         device_class=SensorDeviceClass.DURATION,
         native_unit_of_measurement=UnitOfTime.SECONDS,
         state_class=SensorStateClass.MEASUREMENT,
+        entity_registry_enabled_default=False,
         value_fn=http_mowing_time,
         attributes_fn=http_status_extra,
     ),
@@ -170,6 +173,7 @@ SENSOR_DESCRIPTIONS: tuple[NavimowSensorEntityDescription, ...] = (
         device_class=SensorDeviceClass.DURATION,
         native_unit_of_measurement=UnitOfTime.SECONDS,
         state_class=SensorStateClass.TOTAL_INCREASING,
+        entity_registry_enabled_default=False,
         value_fn=http_total_mowing_time,
     ),
 )

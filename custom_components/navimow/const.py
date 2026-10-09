@@ -34,6 +34,9 @@ MQTT_PASSWORD: Final | None = None
 # 更新间隔（秒）
 UPDATE_INTERVAL: Final = 30
 
+# HA event bus 上转发割草机 MQTT 事件（stuck/lifted/rain 等）的事件名
+EVENT_NAVIMOW_EVENT: Final = "navimow_event"
+
 # MQTT 超时时间（秒），超过该时间未收到状态消息则走 HTTP 兜底。
 # Reduced to detect silent MQTT outages (no state pushes from server) sooner.
 MQTT_STALE_SECONDS: Final = 90
@@ -44,6 +47,10 @@ MQTT_KEEPALIVE_SECONDS: Final = 120
 # HTTP 兜底最小拉取间隔（秒）。
 # 当 MQTT 实时状态缺失时，按分钟级回退到 HTTP，避免状态长时间卡住。
 HTTP_FALLBACK_MIN_INTERVAL: Final = 60
+
+# 即使 MQTT 正常，也按此间隔拉取 HTTP 状态，
+# 用于补充仅存在于 HTTP 响应中的字段（mowing_time 等）。
+HTTP_ENRICHMENT_INTERVAL: Final = 600
 
 # MowerStatus 到 LawnMowerActivity 的映射
 MOWER_STATUS_TO_ACTIVITY = {

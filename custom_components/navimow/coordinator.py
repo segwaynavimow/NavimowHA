@@ -136,22 +136,27 @@ class NavimowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         except ConfigEntryAuthFailed:
             raise
 
-        cached_state = self.sdk.get_cached_state(self.device.id)
-        if cached_state is not None:
-            self._last_state = cached_state
-            self._last_data_source = "mqtt_cache"
+        # The SDK cache has no receive time and is not updated by HTTP fallback.
+        # Use it only to bootstrap; replaying it on every tick would replace a
+        # newer HTTP state with the same old MQTT battery/activity snapshot.
+        if self._last_state is None:
+            cached_state = self.sdk.get_cached_state(self.device.id)
+            if cached_state is not None:
+                self._last_state = cached_state
+                self._last_data_source = "mqtt_cache"
 
         cached_attrs = self.sdk.get_cached_attributes(self.device.id)
         if cached_attrs is not None:
             self._last_attributes = cached_attrs
 
         now = time.monotonic()
+        mqtt_state_update_before_fetch = self._last_mqtt_state_update
         # Use state-specific freshness here. Attributes packets can still arrive
         # while mower activity/state is stale, which would otherwise suppress
         # the HTTP fallback and leave Home Assistant showing old status.
         is_state_stale = (
-            self._last_mqtt_state_update is None
-            or now - self._last_mqtt_state_update > MQTT_STALE_SECONDS
+            mqtt_state_update_before_fetch is None
+            or now - mqtt_state_update_before_fetch > MQTT_STALE_SECONDS
         )
         can_http_fetch = (
             self._last_http_fetch is None
@@ -166,13 +171,17 @@ class NavimowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     status.battery,
                     status.status.value if status.status else "unknown",
                 )
-                self._last_state = self._device_status_to_state(status)
+                http_state = self._device_status_to_state(status)
                 self._last_http_fetch = now
-                self._last_data_source = "http_fallback"
-                # Push immediately so entities update without waiting for the
-                # next coordinator tick.
-                self.data = self._build_data()
-                self.async_set_updated_data(self.data)
+                # A state push received while HTTP was in flight takes priority
+                # over that response. Attribute pushes do not update this clock.
+                if self._last_mqtt_state_update == mqtt_state_update_before_fetch:
+                    self._last_state = http_state
+                    self._last_data_source = "http_fallback"
+                    # Push immediately so entities update without waiting for the
+                    # next coordinator tick.
+                    self.data = self._build_data()
+                    self.async_set_updated_data(self.data)
             except ConfigEntryAuthFailed:
                 raise
             except Exception as err:

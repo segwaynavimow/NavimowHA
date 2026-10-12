@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.1.1](https://github.com/segwaynavimow/NavimowHA/compare/NavimowHA-v1.1.0...NavimowHA-v1.1.1) (2026-10-10)
+
+
+### Bug Fixes
+
+* **navimow:** prevent stale MQTT cache from replacing newer state ([5530aca](https://github.com/segwaynavimow/NavimowHA/commit/5530aca33b3ad224afa6294ca7994d8124021f41))
+* **navimow:** recover faster from silent MQTT outages and stale state ([6ddacc3](https://github.com/segwaynavimow/NavimowHA/commit/6ddacc324b8b6228f9d02d092722e8ffbd72e168))
+* **navimow:** treat MQTT user info circuit-breaker as non-fatal ([964ea60](https://github.com/segwaynavimow/NavimowHA/commit/964ea6011fa50c15464ad1f21eacdfcc608ce758)), closes [#49](https://github.com/segwaynavimow/NavimowHA/issues/49)
+
 ## [1.1.0](https://github.com/segwaynavimow/NavimowHA/compare/NavimowHA-v1.0.0...NavimowHA-v1.1.0) (2026-04-10)
 
 
